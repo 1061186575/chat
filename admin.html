@@ -1,0 +1,323 @@
+
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>zp 在线群聊管理员</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font: 14px Helvetica, Arial; }
+        form {  border: 2px solid #48ff5e;box-shadow: 2px -6px 9px 4px rgba(60, 171, 222, 0.63); padding: 8px 3px; position: fixed; bottom: 0; width: 100%; }
+        form input { border: 0; padding: 10px; width: 90%; margin-right: .5%; }
+        form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+        #messages {
+            position: relative;
+            list-style-type: none;
+            margin: 0; padding: 0;
+
+        }
+
+        /*#messages li:nth-child(odd) { background: #eee; }*/
+
+
+        /*new*/
+        body {
+            position: relative;
+            background: url("img/bg0.jpg") no-repeat fixed center;
+            background-size:100% auto;
+        }
+        header {
+            position: relative;
+            text-align: center;
+            border: 1px solid #000;
+            height: 40px;
+            line-height: 40px;
+        }
+        #messages {
+            width: calc(100% - 200px);
+            display: inline-block;
+            height: 500px;
+            overflow-y: auto;
+            font-size: 16px;
+            padding-left: 10px;
+        }
+        #messages li {
+            position: relative;
+            padding: 5px 10px;
+            background: rgba(193, 160, 160, 0.4);
+            border-bottom: 1px solid #000;
+        }
+        #messages li.myMessage {
+            text-align: right;
+            color: #5f8ddd;
+        }
+        #messages li.adminMsg {
+            text-align: center;
+            color: #d9dd1e;
+        }
+        #inputting {
+            width: calc(100% - 200px);
+            display: inline-block;
+            max-height: 40px;
+            margin-right: 200px;
+            overflow: hidden;
+        }
+        #changeBG{
+            width: 120px;
+            height: 30px;
+            line-height: 30px;
+            background: #53e8e0;
+            cursor: pointer;
+            position: absolute;
+            top: 5px;
+            right: 10px;
+        }
+        #forceExitMember {
+            width: 60px;
+            height: 30px;
+            line-height: 30px;
+            background: #ff6a41;
+            color: #FFF;
+            cursor: pointer;
+            position: absolute;
+            top: 5px;
+            right: 133px;
+        }
+        #onlineWrapper {
+            position: absolute;
+            top: 40px;
+            right: 0px;
+            width: 200px;
+            border: 1px solid #000;
+        }
+        #onlineWrapper p {
+            position: relative;
+            padding: 5px 10px;
+            background: rgba(193, 160, 160, 0.4);
+            border-bottom: 1px solid #000;
+        }
+        #onlineList {
+            text-align: center;
+            height: 450px;
+            overflow-y: auto;
+        }
+        #onlineList p {
+            border-top: 1px dashed blue;
+        }
+        @media screen and (max-width: 500px){ /* 手机 */
+            body{
+                background: url("img/bg0.jpg") repeat fixed center;
+                background-size: 100% auto;
+            }
+            form {  border: 2px solid #48ff5e;box-shadow: 2px -6px 9px 4px rgba(60, 171, 222, 0.63); padding: 8px 3px; position: fixed; bottom: 0; width: 100%; }
+            form input {  padding: 10px; width: calc(100% - 80px); margin: 5px; }
+            form button { width: 50px; }
+            #messages {
+                width: calc(100% - 120px);
+            }
+            #onlineWrapper {
+                width: 120px;
+            }
+            #onlineList {
+                height: 400px;
+            }
+            #inputting {
+                font-size: 16px;
+            }
+        }
+    </style>
+
+    <!--千万不要用这种-->
+    <!--<script src="js/socketio.js"></script>-->
+    <!--也不要用这种-->
+    <!--<script src="socketio"></script>-->
+    <!--Notice that I’m not specifying any URL when I call io(),
+    since it defaults to trying to connect to the host that serves the page.-->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/jQuery"></script>
+</head>
+
+<body>
+
+<header>
+    <h1  id="inputting">
+
+    </h1>
+    <button id="forceExitMember">移出成员</button>
+    <button id="changeBG">更换背景</button>
+</header>
+
+
+<div id="main">
+    <ul id="messages"></ul>
+    <form action="">
+        <input id="input" autofocus autocomplete="off" placeholder="请输入内容" /><button>发送</button>
+    </form>
+
+    <div id="onlineWrapper">
+        <h1>
+            在线人数: <span id="onlineCount">123</span>
+        </h1>
+        人员变动情况:
+        <div id="onlineList"></div>
+    </div>
+
+</div>
+
+
+<script>
+    var inputElem = $('#input');
+    var connectInitObj = { // 控制台改昵称
+        content: '',
+        from: '',
+        to: ''
+    };
+
+    var account = prompt('账号: ');
+    var pwd = prompt('密码: ');
+    $.ajax({
+        type: 'post',
+        url: '/adminVerify',
+        async: false,
+        data: {account:account, pwd: pwd},
+        success(res) {
+            if (res.code === 0) {
+                admin();
+            } else {
+                alert('账号密码错误');
+                document.documentElement.remove();
+                return false;
+            }
+        },
+        error(e) {
+            alert('服务器错误');
+            document.documentElement.remove();
+            return false;
+        }
+    });
+
+
+
+    function admin() {
+
+        function scrollToBottom(elem) {
+            elem.scrollTo(0, elem.scrollHeight + 2000)
+        }
+        var changeBGCount = 0;
+        $('#changeBG').on('click', function () {
+            changeBGCount = ++changeBGCount > 9 ? 0 : changeBGCount;
+            document.body.style.backgroundImage = "url(\"img/bg"+changeBGCount+".jpg\") ";
+        });
+
+
+        $(function () {
+            var socket = io();
+
+            // connectInitObj.from = prompt('你的聊天昵称: ') || '神秘人' + parseInt(Math.random() * 1000) + '号';
+            connectInitObj.from = '管理员';
+            // connectInitObj.to = prompt('发消息给: ');
+            /**
+             *  发送初始化信息
+             */
+            socket.emit('connectInit', connectInitObj);
+            socket.on('connectInit', function(msg){
+                if (msg) $('#messages').append($('<li>').text(msg));
+                // else $('#messages').append($('<li>').text('连接失败'));
+            });
+
+
+            /**
+             *  监听收到的群聊消息
+             **/
+            socket.on('group chat', function(msgObj){
+                $('#messages').append($('<li>').text(msgObj.from +": "+msgObj.content));
+                scrollToBottom($('#messages')[0]);
+            });
+            socket.on('adminMsg', function(msgObj){
+                $('#messages').append($('<li class="adminMsg">').text(msgObj.from +": "+msgObj.content));
+                scrollToBottom($('#messages')[0]);
+            });
+
+            /**
+             *  recentChatRecord
+             **/
+            socket.on('recentChatRecord', function(msgArr){
+                // console.log("msgArr: ", msgArr);
+                msgArr.forEach(function (d) {
+                    $('#messages').append($('<li>').text(d.from +": "+d.content));
+                });
+                scrollToBottom($('#messages')[0]);
+            });
+
+            /**
+             *  在线列表
+             **/
+            socket.on('onlineList', function(onlineStr){
+                $('#onlineList').append('<p>'+onlineStr+'</p>');
+                scrollToBottom($('#onlineList')[0]);
+            });
+            /**
+             * 在线总数
+             **/
+            socket.on('onlineCount', function(count){
+                $('#onlineCount').text(count);
+            });
+
+
+            /**
+             *  发送实时输入和监听实时输入
+             */
+            let timer1, timer2;
+            inputElem.on('input', function (e) {
+                socket.emit('inputting', connectInitObj.from);
+            });
+            socket.on('inputting', function(msg){
+                $('#inputting').text(msg);
+                if (timer2) clearTimeout(timer2);
+                timer2 = setTimeout(()=>{
+                    $('#inputting').text('');
+                },3000);
+            });
+
+
+
+            socket.on('disconnect', (reason) => {
+                // console.log("reason: ", reason);
+                if (reason === 'transport close') {
+                    // alert('服务器已阵亡!!! 请刷新页面');
+                }
+            });
+
+            // 踢人
+            $('#forceExitMember').on('click', function () {
+                socket.emit('forceExit', prompt('踢谁?'));
+            });
+
+
+            $('form').submit(function(e){
+                e.preventDefault();
+                connectInitObj.content = inputElem.val();
+                socket.emit('adminMsg', connectInitObj);
+                // $('#messages').append($('<li class="myMessage">').text(inputElem.val()));
+                inputElem.val('');
+                return false;
+            });
+
+        });
+
+        // window.onbeforeunload = function(e) {
+        //
+        //     e.preventDefault();
+        //     e.returnValue('123?');
+        //     return false;
+        // }
+    }
+
+</script>
+
+
+</body>
+</html>

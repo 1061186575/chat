@@ -25,7 +25,7 @@
         /*new*/
         body {
             position: relative;
-            background: url("img/bg0.jpg") no-repeat fixed center;
+            background: url("/img/bg0.jpg") no-repeat fixed center;
             background-size:100% auto;
         }
         header {
@@ -108,7 +108,7 @@
         }
         @media screen and (max-width: 500px){ /* 手机 */
             body{
-                background: url("img/bg0.jpg") repeat fixed center;
+                background: url("/img/bg0.jpg") repeat fixed center;
                 background-size: 100% auto;
             }
             form {  border: 2px solid #48ff5e;box-shadow: 2px -6px 9px 4px rgba(60, 171, 222, 0.63); padding: 8px 3px; position: fixed; bottom: 0; width: 100%; }
@@ -177,10 +177,9 @@
 
 
 <script>
-    var inputElem = $('#input');
     var connectInitObj = { // 控制台改昵称
         content: '',
-        from: '',
+        from: '管理员',
         to: ''
     };
 
@@ -197,19 +196,18 @@
             } else {
                 alert('账号密码错误');
                 document.documentElement.remove();
-                return false;
             }
         },
         error(e) {
             alert('服务器错误');
             document.documentElement.remove();
-            return false;
         }
     });
 
 
 
     function admin() {
+        var inputElem = $('#input');
 
         function scrollToBottom(elem) {
             elem.scrollTo(0, elem.scrollHeight + 2000)
@@ -224,9 +222,7 @@
         $(function () {
             var socket = io();
 
-            // connectInitObj.from = prompt('你的聊天昵称: ') || '神秘人' + parseInt(Math.random() * 1000) + '号';
-            connectInitObj.from = '管理员';
-            // connectInitObj.to = prompt('发消息给: ');
+
             /**
              *  发送初始化信息
              */
@@ -244,12 +240,14 @@
             socket.on('group chat', function(msgObj){
                 $('#messages').append($('<li>').text(msgObj.from +": "+msgObj.content));
                 scrollToBottom($('#messages')[0]);
-                $('#audio1')[0].play();
+                if (msgObj.content !== connectInitObj.content) {$('#audio1')[0].play();} // 存在bug
+
             });
             socket.on('adminMsg', function(msgObj){
                 $('#messages').append($('<li class="adminMsg">').text(msgObj.from +": "+msgObj.content));
                 scrollToBottom($('#messages')[0]);
-                $('#audio2')[0].play();
+                if (msgObj.content !== connectInitObj.content) {$('#audio2')[0].play();} // 存在bug
+
             });
 
 

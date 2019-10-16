@@ -56,7 +56,7 @@
         }
         #messages li.adminMsg {
             text-align: center;
-            color: #d9dd1e;
+            color: #faff00;
         }
         #inputting {
             width: calc(100% - 200px);
@@ -117,6 +117,7 @@
                 font-size: 16px;
             }
         }
+
     </style>
 
     <!--千万不要用这种-->
@@ -152,17 +153,30 @@
         <div id="onlineList"></div>
     </div>
 
+
+    <audio id="audio1">
+        <source src="/audio/QQdididi.mp3" type="audio/mpeg">
+        您的浏览器不支持 audio 元素。
+    </audio>
+    <audio id="audio2">
+        <source src="/audio/QQcare.mp3" type="audio/mpeg">
+        您的浏览器不支持 audio 元素。
+    </audio>
+
+
 </div>
 
 
 
 <script>
     var inputElem = $('#input');
-    var connectInitObj = { // 控制台改昵称
+    var connectInitObj = {
         content: '',
         from: '',
         to: ''
     };
+
+
 
     function scrollToBottom(elem) {
         elem.scrollTo(0, elem.scrollHeight + 2000)
@@ -171,13 +185,19 @@
     $('#changeBG').on('click', function () {
         changeBGCount = ++changeBGCount > 9 ? 0 : changeBGCount;
         document.body.style.backgroundImage = "url(\"img/bg"+changeBGCount+".jpg\") ";
+        if (changeBGCount === 9) {
+            document.body.style.backgroundSize = 'auto';
+        } else {
+            document.body.style.backgroundSize = '100% auto';
+        }
     });
 
 
     $(function () {
         var socket = io();
 
-        let nickname = prompt('你的聊天昵称: ');
+        let nickname = 'test';
+        // let nickname = prompt('你的聊天昵称: ');
         // connectInitObj.to = prompt('发消息给: ');
         if (!nickname) {
             nickname = '神秘人' + parseInt(Math.random() * 1000) + '号';
@@ -203,10 +223,12 @@
         socket.on('group chat', function(msgObj){
             $('#messages').append($('<li>').text(msgObj.from +": "+msgObj.content));
             scrollToBottom($('#messages')[0]);
+            $('#audio1')[0].play();
         });
         socket.on('adminMsg', function(msgObj){
             $('#messages').append($('<li class="adminMsg">').text(msgObj.from +": "+msgObj.content));
             scrollToBottom($('#messages')[0]);
+            $('#audio2')[0].play();
         });
 
         /**
@@ -264,7 +286,7 @@
             if (name === connectInitObj.from) {
                 alert('你已经被管理员踢出群聊');
                 window.close();
-                console.log(window.document.documentElement.remove());
+                window.document.documentElement.remove()
             }
         });
 
@@ -282,9 +304,7 @@
     });
 
     // window.onbeforeunload = function(e) {
-    //     e.preventDefault();
-    //     e.returnValue('?????');
-    //     return true;
+    //
     // }
 </script>
 

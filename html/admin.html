@@ -17,7 +17,6 @@
             position: relative;
             list-style-type: none;
             margin: 0; padding: 0;
-
         }
 
         /*#messages li:nth-child(odd) { background: #eee; }*/
@@ -56,7 +55,7 @@
         }
         #messages li.adminMsg {
             text-align: center;
-            color: #d9dd1e;
+            color: #faff00;
         }
         #inputting {
             width: calc(100% - 200px);
@@ -165,6 +164,15 @@
         <div id="onlineList"></div>
     </div>
 
+    <audio id="audio1">
+        <source src="/audio/QQdididi.mp3" type="audio/mpeg">
+        您的浏览器不支持 audio 元素。
+    </audio>
+    <audio id="audio2">
+        <source src="/audio/QQcare.mp3" type="audio/mpeg">
+        您的浏览器不支持 audio 元素。
+    </audio>
+
 </div>
 
 
@@ -229,17 +237,21 @@
             });
 
 
+
             /**
              *  监听收到的群聊消息
              **/
             socket.on('group chat', function(msgObj){
                 $('#messages').append($('<li>').text(msgObj.from +": "+msgObj.content));
                 scrollToBottom($('#messages')[0]);
+                $('#audio1')[0].play();
             });
             socket.on('adminMsg', function(msgObj){
                 $('#messages').append($('<li class="adminMsg">').text(msgObj.from +": "+msgObj.content));
                 scrollToBottom($('#messages')[0]);
+                $('#audio2')[0].play();
             });
+
 
             /**
              *  recentChatRecord

@@ -10,16 +10,14 @@ app.use(bodyParser.urlencoded({ extended: false }));//解析post请求数据
 
 
 app.get('/', function(req, res){
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/html/index.html');
 });
 app.get('/admin', function(req, res){
-    res.sendFile(__dirname + '/admin.html');
+    res.sendFile(__dirname + '/html/admin.html');
 });
-app.get('/adminshasha', function(req, res){
-    res.sendFile(__dirname + '/adminshasha.html');
-});
+
 app.post('/adminVerify', function(req, res){
-    console.log("req.body: ", req.body);
+    // console.log("req.body: ", req.body);
     let code = 1;
     if (req.body.account === 'admin' && req.body.pwd === 'a123456') {
         code = 0;
@@ -62,15 +60,22 @@ app.get('/img/bg8.jpg', function (req, res) {
 app.get('/img/bg9.jpg', function (req, res) {
     res.sendFile(__dirname + '/img/bg9.jpg');
 });
+// audio
+app.get('/audio/QQdididi.mp3', function (req, res) {
+    res.sendFile(__dirname + '/audio/QQdididi.mp3');
+});
+app.get('/audio/QQcare.mp3', function (req, res) {
+    res.sendFile(__dirname + '/audio/QQcare.mp3');
+});
+
 
 var onlineStr = "";
 var onlineCount = 1;
 var recentChatRecord = [];
-let timer; // 定时器
 
 io.on('connection', function(socket){
     socket.on('connectInit', function (msg) {
-        console.log("连接成功 msg: ", msg);
+        //console.log("连接成功 msg: ", msg);
         if (msg.from) {
             io.emit('recentChatRecord', recentChatRecord);
             io.emit('connectInit', `${msg.from} 加入了群聊`);
@@ -93,15 +98,16 @@ io.on('connection', function(socket){
 
 
     /**
-     *  处理所有的群聊消息, 只负责消息转发和消息保存
+     *  处理所有的群聊消息
      */
     function groupChat(listen_str) {
         socket.on(listen_str, function(msgObj){
             // 消息内容处理
+            if (!msgObj.content || typeof msgObj.content != "string") return;
             if (msgObj.content.length > 1000) {
                 msgObj.content = msgObj.content.slice(0, 1000)
             }
-            msgObj.content = msgObj.content.replace(/(爸爸|爷爷)/g, '儿子~');
+            msgObj.content = msgObj.content.replace(/(你爸|你爷)/g, '你儿子~');
 
             // 发送回去
             io.emit(listen_str, msgObj);
@@ -116,28 +122,11 @@ io.on('connection', function(socket){
              */
             var writeContent = 'Time: ' + new Date().toLocaleTimeString() +"\n"+
                 msgObj.from + '说: ' + msgObj.content +"\n";
-            console.log(writeContent);
-
+            //console.log(writeContent);
             var saveRecordDate = new Date().toLocaleDateString();
             fs.appendFile('./chatRecord/'+saveRecordDate+'.txt', writeContent, function (err) {
                 if (err) console.log("err: ", err);
             });
-
-            // if (timer) {
-            //     clearInterval(timer);
-            // } else {
-            //     timer = setTimeout(function () {
-            //         fs.readFile('./chatRecord'+saveRecordDate+'.txt', function (err, data) {
-            //             // console.log("readFile data: ", data.length);
-            //             if (data.length / 1048576 > 2) { // 大于2M
-            //                 // error
-            //                 fs.appendFile('./chatRecord'+ saveRecordDate +'.2'+'.txt', writeContent,function (err) {
-            //                     if (err) console.log("err: ", err);
-            //                 });
-            //             }
-            //         });
-            //     }, 10 * 60 * 1000);
-            // }
 
         });
     }
@@ -146,25 +135,22 @@ io.on('connection', function(socket){
 
 
 
-
-
     /**
      *  real-time input
      */
-    socket.on('inputting', function (form) {
-        io.emit('inputting', form+'正在输入中');
+    socket.on('inputting', function (from) {
+        io.emit('inputting', from+'正在输入中');
     });
 
-    socket.on('forceExit', function (name) {
-        console.log("name: ", name);
-        io.emit('forceExit', name);
+    socket.on('forceExit', function (from) {
+        io.emit('forceExit', from);
     });
 
     /**
      *  监听客户端退出
      */
     socket.on('disconnect', function(msg){
-        console.log("有人走了: " + Date.now());
+        // console.log("有人走了: " + Date.now());
         onlineMemberChange();
     });
 
